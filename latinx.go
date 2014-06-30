@@ -45,7 +45,7 @@ const (
 	Latin8   = ISO_8859_14
 	Latin9   = ISO_8859_15
 	Latin10  = ISO_8859_16
-	// The numbers (1,2) are just meant to 
+	// The numbers (1,2) are just meant to
 	// distinguish PARTIAL from ILLEGAL
 	PARTIAL = UnicodeError(1)
 	ILLEGAL = UnicodeError(2)
@@ -209,14 +209,39 @@ func (c *Converter) Decode(latin []byte) (utf_8 []byte, err error) {
 	return buf.Bytes(), err
 }
 
+// Convert a ISO 8859 byte into a UTF-8 byte sequence.
+// If this function returns a UnknownByteError, the charset of the
+// Converter does not have a unicode mapping for a byte found in latin.
+func (c *Converter) DecodeByte(latin byte) (utf_8 []byte, err error) {
+	if latin < utf8.RuneSelf {
+		utf_8 = []byte{latin}
+		return
+	}
+	if utf8symbol, ok := c.latinToUtf8[latin]; ok {
+		utf_8 = utf8symbol
+	} else {
+		errmsg := fmt.Sprintf("0x%X not valid in: %s", latin, c.id)
+		err = UnknownByteError(errmsg)
+	}
+	return
+}
+
 // Wrappers to avoid fetching a *Converter to do a single encode/decode
 
 // Convert a UTF-8 encoded slice to a ISO-8859 encoded slice
 func Encode(charset int, utf_8 []byte) (latin []byte, success int, err error) {
-	return converters[charset].Encode(utf_8)
+	latin, success, err = converters[charset].Encode(utf_8)
+	return
 }
 
 // Convert a ISO-8859 encoded slice to a UTF-8 encoded slice
 func Decode(charset int, latin []byte) (utf_8 []byte, err error) {
-	return converters[charset].Decode(latin)
+	utf_8, err = converters[charset].Decode(latin)
+	return
+}
+
+// Convert a ISO-8859 encoded byte to a UTF-8 encoded slice
+func DecodeByte(charset int, latin byte) (utf_8 []byte, err error) {
+	utf_8, err = converters[charset].DecodeByte(latin)
+	return
 }
