@@ -230,7 +230,7 @@ func (c *Converter) DecodeByte(latin byte) (utf_8 []byte, err error) {
 // Convert a ISO 8859 stream into a UTF-8 stream.
 // If this function returns a UnknownByteError, the charset of the
 // Converter does not have a unicode mapping for a byte found in latin.
-func (c *Converter) DecodeStream(latin io.Reader, utf8 io.Writer) error {
+func (c *Converter) DecodeStream(latin io.Reader, utf io.Writer) error {
 	buffer := make([]byte, 1024*32)
 	for {
 		n, err := latin.Read(buffer)
@@ -245,7 +245,7 @@ func (c *Converter) DecodeStream(latin io.Reader, utf8 io.Writer) error {
 		if err != nil {
 			return err
 		}
-		_, err = utf8.Write(utf8b)
+		_, err = utf.Write(utf8b)
 		if err != nil {
 			return err
 		}
@@ -271,4 +271,9 @@ func Decode(charset int, latin []byte) (utf_8 []byte, err error) {
 func DecodeByte(charset int, latin byte) (utf_8 []byte, err error) {
 	utf_8, err = converters[charset].DecodeByte(latin)
 	return
+}
+
+// Convert a ISO-8859 encoded stream to a UTF-8 encoded stream
+func DecodeStream(charset int, latin io.Reader, utf io.Writer) error {
+	return converters[charset].DecodeStream(latin, utf)
 }
