@@ -7,6 +7,7 @@ package latinx
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"unicode/utf8"
 )
 
@@ -224,6 +225,32 @@ func (c *Converter) DecodeByte(latin byte) (utf_8 []byte, err error) {
 		err = UnknownByteError(errmsg)
 	}
 	return
+}
+
+// Convert a ISO 8859 stream into a UTF-8 stream.
+// If this function returns a UnknownByteError, the charset of the
+// Converter does not have a unicode mapping for a byte found in latin.
+func (c *Converter) DecodeStream(latin io.Reader, utf8 io.Writer) error {
+	buffer := make([]byte, 1024*32)
+	for {
+		n, err := latin.Read(buffer)
+		if err == io.EOF {
+			return nil
+		}
+		if n == 0 {
+			return nil
+		}
+		//TODO: more GC friendly Conversion method
+		utf8b, err := c.Decode(buffer[:n])
+		if err != nil {
+			return err
+		}
+		_, err = utf8.Write(utf8b)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Wrappers to avoid fetching a *Converter to do a single encode/decode
